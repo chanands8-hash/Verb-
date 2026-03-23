@@ -301,6 +301,18 @@ function renderGrid() {
   });
 }
 
+/* ===== 發音功能 (Web Speech API) ===== */
+function speakWord(text) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // 停止先前的發音，避免重疊
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-HK'; // 預設廣東話，若需國語可改為 'zh-TW'
+    utterance.rate = 0.85; // 語速稍微放慢，適合小朋友
+    utterance.pitch = 1.1; // 音調稍微提高，更顯生動
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 function tap(i, el) {
   if (busy || matched.has(i)) return;
   const idx = sel.findIndex(s => s.i === i);
@@ -308,9 +320,10 @@ function tap(i, el) {
     sel.splice(idx, 1);
     el.classList.remove('sel');
   } else if (sel.length < 2) {
+    speakWord(cards[i].ch); // 讀出單一選取的字
     sel.push({ i, el });
     el.classList.add('sel');
-    if (sel.length === 2) setTimeout(sub, 400);
+    if (sel.length === 2) setTimeout(sub, 700); // 延長判定時間(400改為700)，讓單字發音能完整播完
   }
   renderAns();
 }
@@ -339,6 +352,7 @@ function sub() {
   const isValid = (c0.vi === c1.vi && c0.ch === c0.verb[0] && c1.ch === c0.verb[1]);
 
   if (isValid) {
+    speakWord(c0.verb); // 配對成功時，讀出完整的動詞
     sel.forEach(s => {
       s.el.classList.add('matched');
       matched.add(s.i);
@@ -374,6 +388,7 @@ function updateProg() {
 }
 
 function victory() {
+  speakWord("恭喜過關！"); // 全部完成時用語音提示
   const stars = mis === 0 ? 3 : mis <= 3 ? 2 : 1;
   saveResult(lv, stars, mis);
   
