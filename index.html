@@ -132,8 +132,39 @@ html,body{font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidd
 .mbox{background:#fff;border-radius:30px;padding:28px 24px;text-align:center;max-width:380px;width:88%;transform:scale(.6);transition:.5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 50px rgba(0,0,0,.1);border:2px solid rgba(168,85,247,.1)}
 .modal-bg.show .mbox{transform:scale(1)}
 
+/* ===== 大型提示框 ===== */
+.large-hint {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  background: rgba(255, 255, 255, 0.95);
+  border: 6px solid #a855f7;
+  border-radius: 40px;
+  padding: 40px 60px;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #7c3aed;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25), 0 0 0 100vw rgba(255,255,255,0.4);
+  z-index: 3000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  white-space: nowrap;
+}
+.large-hint.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
 @media(max-width:420px){
   .hdr h1{font-size:1.4em}.grid{gap:6px}.ans-slot{width:56px;height:56px}.ans-word{min-width:66px;height:56px}
+  .large-hint { font-size: 3rem; padding: 30px 40px; }
 }
 </style>
 </head>
@@ -220,6 +251,9 @@ html,body{font-family:'Noto Sans TC',sans-serif;min-height:100vh;overflow-x:hidd
   </div>
 </div>
 
+<!-- 大型提示框 -->
+<div id="largeHint" class="large-hint"></div>
+
 <script>
 /* ===== LOCAL STORAGE & PROGRESS ===== */
 let userProgress = {};
@@ -261,6 +295,12 @@ const DATA = {
   1: ["跑步", "跳高", "走路", "拍手", "唱歌", "跳舞", "玩耍", "微笑"],
   2: ["讀書", "寫字", "畫畫", "吃飯", "喝水", "睡覺", "起床", "洗澡"],
   3: ["刷牙", "拿住", "擁抱", "分享", "幫助", "照顧", "聽到", "說話"]
+};
+
+const EMOJIS = {
+  "跑步": "🏃", "跳高": "🦘", "走路": "🚶", "拍手": "👏", "唱歌": "🎤", "跳舞": "💃", "玩耍": "🧸", "微笑": "😊",
+  "讀書": "📖", "寫字": "✍️", "畫畫": "🎨", "吃飯": "🍚", "喝水": "🥛", "睡覺": "😴", "起床": "☀️", "洗澡": "🛁",
+  "刷牙": "🪥", "拿住": "✊", "擁抱": "🫂", "分享": "🎁", "幫助": "🤝", "照顧": "❤️", "聽到": "👂", "說話": "💬"
 };
 
 let lv, cards = [], sel = [], matched = new Set(), mis = 0, busy = false;
@@ -425,10 +465,21 @@ function doHint() {
   for (let verb of DATA[lv]) {
     const idx = cards.findIndex((c, i) => c.verb === verb && !matched.has(i));
     if (idx > -1) {
-      setMsg(`提示：找「${verb}」`);
-      const el = document.querySelectorAll('.card')[idx];
-      el.classList.add('wrong');
-      setTimeout(() => el.classList.remove('wrong'), 500);
+      const emoji = EMOJIS[verb] || "💡";
+      
+      // 顯示巨大的畫面中央提示
+      const lh = document.getElementById('largeHint');
+      lh.textContent = `${emoji} ${verb}`;
+      lh.classList.add('show');
+      
+      // 同時用語音讀出目標詞彙
+      speakWord(verb); 
+      
+      // 2秒後自動隱藏提示
+      setTimeout(() => {
+        lh.classList.remove('show');
+      }, 2000);
+      
       break;
     }
   }
